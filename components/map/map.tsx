@@ -24,7 +24,7 @@ const Map = () => {
 			className={style.map}
 		>
 			<TileLayer
-				attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+				attribution="&copy; <a href=&#34;https://www.openstreetmap.org/copyright&#34;>OpenStreetMap</a> contributors"
 				url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 			/>
 			<Marker position={{ lat: 60.00927, lng: 30.3772 }}>
