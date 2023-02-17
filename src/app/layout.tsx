@@ -1,4 +1,5 @@
-import './globals.scss';
+import './styles/globals.scss';
+import './styles/map.scss';
 
 export default function RootLayout({
 	children,
