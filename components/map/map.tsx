@@ -21,10 +21,7 @@ import style from './map.module.scss';
 const Map = () => {
 	const options: L.TileLayerOptions = {
 		attribution: '© OpenStreetMap contributors',
-		minZoom: 2,
-		maxZoom: 18,
 		tileSize: 256,
-		zoomOffset: 0,
 		zoomReverse: false,
 		detectRetina: false,
 		crossOrigin: false,
