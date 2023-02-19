@@ -1,12 +1,6 @@
 'use client';
 
-import {
-	MapContainer,
-	TileLayer,
-	ZoomControl,
-	Marker,
-	Popup,
-} from 'react-leaflet';
+import { MapContainer, Marker, Popup } from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
@@ -29,20 +23,14 @@ const Map = () => {
 	};
 
 	return (
-		<MapContainer
-			zoomControl={false}
-			scrollWheelZoom={true}
-			className={style.map}
-		>
+		<MapContainer scrollWheelZoom={true} className={style.map}>
 			<CanvasTileLayer
 				url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 				options={options}
 			/>
 			{/* <Marker position={{ lat: 60.00927, lng: 30.3772 }}>
 				<Popup>ООО "СТЦ"</Popup>
-			</Marker>
-			<ZoomControl position="bottomright" /> */}
-			<div>dsfdsf</div>
+			</Marker> */}
 		</MapContainer>
 	);
 };

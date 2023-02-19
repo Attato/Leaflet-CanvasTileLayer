@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import L from 'leaflet';
+import L, { Draggable } from 'leaflet';
 
 interface CanvasTileLayerProps {
 	url: string; // URL to get tiles
@@ -13,9 +13,16 @@ const CanvasTileLayer = ({ url, options }: CanvasTileLayerProps) => {
 	useEffect(() => {
 		// Create a new Leaflet map and set the view to [y: 0, x: 0] with a zoom level of 1
 		const map = L.map('map', {
-			zoomControl: false, // Turning off the standard zoom control panel
+			zoomControl: false, // Standard zoom control panel
 			...options,
 		}).setView([60.009, 30.377], 18);
+
+		L.control
+			.zoom({
+				position: 'topright',
+			})
+			.addTo(map);
+		L.control.scale().addTo(map);
 
 		// Create a new tile layer with the given URL and options and add it to the map
 		const tileLayer = L.tileLayer(url, {
@@ -113,8 +120,8 @@ const CanvasTileLayer = ({ url, options }: CanvasTileLayerProps) => {
 
 	return (
 		<div id="map">
-			<canvas ref={backCanvasRef} />
-			<canvas ref={canvasRef} />
+			<canvas ref={backCanvasRef} id="backCanvasRef" />
+			<canvas ref={canvasRef} id="canvasRef" />
 		</div>
 	);
 };
