@@ -1,38 +1,30 @@
-'use client';
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import CanvasTileLayer from "./CanvasTileLayer";
 
-import { MapContainer, Marker, Popup } from 'react-leaflet';
+function Map() {
+	const ref = useRef<any>();
+	useEffect(() => {
+		if (ref.current) {
+			return;
+		}
+		ref.current = L.map("map", {
+			center: [-29.5, 145],
+			zoom: 3.5,
+		});
 
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-defaulticon-compatibility';
-import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
+		const canvasTileLayer = new CanvasTileLayer(
+			"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+			{
+				attribution:
+					'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+				maxZoom: 18,
+			},
+		).addTo(ref.current);
+	}, []);
 
-import L from 'leaflet';
-
-import CanvasTileLayer from './CanvasTileLayer';
-
-import style from './map.module.scss';
-
-const Map = () => {
-	const options: L.TileLayerOptions = {
-		attribution: '© OpenStreetMap contributors',
-		tileSize: 256,
-		zoomReverse: false,
-		detectRetina: false,
-		crossOrigin: false,
-		errorTileUrl: '',
-	};
-
-	return (
-		<MapContainer scrollWheelZoom={true} className={style.map}>
-			<CanvasTileLayer
-				url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-				options={options}
-			/>
-			{/* <Marker position={{ lat: 60.00927, lng: 30.3772 }}>
-				<Popup>ООО "СТЦ"</Popup>
-			</Marker> */}
-		</MapContainer>
-	);
-};
+	return <div id="map"></div>;
+}
 
 export default Map;
