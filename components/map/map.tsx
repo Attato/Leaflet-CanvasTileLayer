@@ -1,38 +1,33 @@
-'use client';
+"use client";
+import React, { useEffect } from "react";
 
-import { MapContainer, Marker, Popup } from 'react-leaflet';
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-defaulticon-compatibility';
-import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
-
-import L from 'leaflet';
-
-import CanvasTileLayer from './CanvasTileLayer';
-
-import style from './map.module.scss';
+import CanvasTileLayer from "./CanvasTileLayer";
 
 const Map = () => {
-	const options: L.TileLayerOptions = {
-		attribution: '© OpenStreetMap contributors',
-		tileSize: 256,
-		zoomReverse: false,
-		detectRetina: false,
-		crossOrigin: false,
-		errorTileUrl: '',
-	};
+	useEffect(() => {
+		const map = L.map("map", { renderer: L.canvas() }).setView(
+			[60.00927, 30.3772],
+			17,
+		);
 
-	return (
-		<MapContainer scrollWheelZoom={true} className={style.map}>
-			<CanvasTileLayer
-				url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-				options={options}
-			/>
-			{/* <Marker position={{ lat: 60.00927, lng: 30.3772 }}>
-				<Popup>ООО "СТЦ"</Popup>
-			</Marker> */}
-		</MapContainer>
-	);
+		const canvasTileLayer = new CanvasTileLayer(
+			"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+			{
+				attribution: "Map data &copy; OpenStreetMap contributors",
+				maxZoom: 18,
+				tileSize: 256,
+			},
+		).addTo(map);
+
+		return () => {
+			map.remove();
+		};
+	}, []);
+
+	return <div id="map"></div>;
 };
 
 export default Map;
