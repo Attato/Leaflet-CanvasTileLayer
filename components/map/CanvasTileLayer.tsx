@@ -10,13 +10,11 @@ class CanvasTileLayer extends L.TileLayer {
 		this.tileSize = this.getTileSize();
 		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
 		this.ctx = this.canvas.getContext("2d");
-		this.canvas.width = 1024;
-		this.canvas.height = 1024;
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
 	}
 
 	createTile(coords: L.Coords, done: L.DoneCallback): HTMLElement {
-		console.log("ccccd", coords + "");
-
 		const tile = super.createTile(coords, done);
 		const url = this.getTileUrl(coords);
 
@@ -28,26 +26,6 @@ class CanvasTileLayer extends L.TileLayer {
 		const map: L.Map = this._map;
 		const bounds: L.Bounds = map.getPixelBounds();
 		const zoom: number = map.getZoom();
-
-		const nwTilePoint = new L.Point(
-			// округляем вниз до ближайшего целого числа
-
-			// @ts-ignore
-			Math.floor(bounds.min.x / this.tileSize.x),
-			// @ts-ignore
-			Math.floor(bounds.min.y / this.tileSize.y),
-		);
-
-		const seTilePoint = new L.Point(
-			// округляем вверх до ближайшего целого числа
-
-			// @ts-ignore
-			Math.ceil(bounds.max.x / this.tileSize.x),
-			// @ts-ignore
-			Math.ceil(bounds.max.y / this.tileSize.y),
-		);
-
-		const max = Math.pow(2, zoom); // используем формулу для максимального значения координаты тайла на данном уровне зума
 
 		tile.onload = () => {
 			// удаляем оригинальный тайл, который был создан с помощью createTile
@@ -65,13 +43,7 @@ class CanvasTileLayer extends L.TileLayer {
 					this.tileSize.x,
 					this.tileSize.y,
 				);
-				console.log(
-					coords.x,
-					coords.y,
-					"xPos: " + pos.x,
-					"yPos: " + pos.y,
-					`tileSize: ${this.tileSize.x}, ${this.tileSize.y}`,
-				);
+				console.log(pos, this._map.getPixelBounds().min.x);
 			} else {
 				console.log("!ctx");
 			}
