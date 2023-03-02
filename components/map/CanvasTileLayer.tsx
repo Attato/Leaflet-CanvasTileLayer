@@ -1,73 +1,84 @@
-import L from 'leaflet';
+import L from "leaflet";
 
 class CanvasTileLayer extends L.TileLayer {
-	tileSize: number | L.Point | undefined;
+	tileSize: L.Point;
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D | null;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
-		this.tileSize = options?.tileSize || 256;
-		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
-		this.ctx = this.canvas.getContext('2d');
+		this.tileSize = this.getTileSize();
+		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
+		this.ctx = this.canvas.getContext("2d");
+		this.canvas.width = 1024;
+		this.canvas.height = 1024;
 	}
 
 	createTile(coords: L.Coords, done: L.DoneCallback): HTMLElement {
+		console.log("ccccd", coords + "");
+
 		const tile = super.createTile(coords, done);
 		const url = this.getTileUrl(coords);
 
-		this.handleTileLoad(tile, url);
+		this.handleTileLoad(tile, url, coords);
 		return tile;
 	}
 
-	private handleTileLoad(tile: HTMLElement, url: string) {
+	private handleTileLoad(tile: HTMLElement, url: string, coords: L.Coords) {
 		const map: L.Map = this._map;
-		if (!map) {
-			return;
-		}
-
 		const bounds: L.Bounds = map.getPixelBounds();
 		const zoom: number = map.getZoom();
 
 		const nwTilePoint = new L.Point(
+			// округляем вниз до ближайшего целого числа
+
 			// @ts-ignore
-			Math.floor(bounds.min.x / this.tileSize),
+			Math.floor(bounds.min.x / this.tileSize.x),
 			// @ts-ignore
-			Math.floor(bounds.min.y / this.tileSize)
+			Math.floor(bounds.min.y / this.tileSize.y),
 		);
 
 		const seTilePoint = new L.Point(
+			// округляем вверх до ближайшего целого числа
+
 			// @ts-ignore
-			Math.floor(bounds.max.x / this.tileSize),
+			Math.ceil(bounds.max.x / this.tileSize.x),
 			// @ts-ignore
-			Math.floor(bounds.max.y / this.tileSize)
+			Math.ceil(bounds.max.y / this.tileSize.y),
 		);
 
-		// @ts-ignore
-		const max: number = map.options.crs.scale(zoom) / this.tileSize;
+		const max = Math.pow(2, zoom); // используем формулу для максимального значения координаты тайла на данном уровне зума
 
-		for (let x = nwTilePoint.x; x <= seTilePoint.x; x++) {
-			for (let y = nwTilePoint.y; y <= seTilePoint.y; y++) {
-				const xTile = (x + max) % max;
-				const yTile = (y + max) % max;
-				console.log('tile ' + xTile + ' ' + yTile);
-			}
-		}
-
-		const tileImage = new Image();
-		tileImage.src = url;
-
-		tileImage.onload = () => {
+		tile.onload = () => {
+			// удаляем оригинальный тайл, который был создан с помощью createTile
 			this.removeTileElement(tile);
-			this.ctx
-				? this.ctx.drawImage(
-						tileImage,
-						0,
-						0,
-						this.canvas.width,
-						this.canvas.height
-				  )
-				: console.log('!ctx');
+			// @ts-ignore
+			const pos = this._getTilePos(coords);
+
+			if (this.ctx) {
+				this.ctx.drawImage(
+					// @ts-ignore
+					tile,
+					pos.x,
+					pos.y,
+					// Надо узнать разницу координат мувенда и потом вычитать её из pos
+					this.tileSize.x,
+					this.tileSize.y,
+				);
+				console.log(
+					coords.x,
+					coords.y,
+					"xPos: " + pos.x,
+					"yPos: " + pos.y,
+					`tileSize: ${this.tileSize.x}, ${this.tileSize.y}`,
+				);
+			} else {
+				console.log("!ctx");
+			}
+		};
+
+		tile.onerror = () => {
+			console.log(`Failed to load tile: ${url}`);
 		};
 	}
 
