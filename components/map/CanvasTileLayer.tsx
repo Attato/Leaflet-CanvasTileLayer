@@ -21,15 +21,52 @@ class CanvasTileLayer extends L.TileLayer {
 	}
 
 	private handleTileLoad(tile: HTMLElement, url: string) {
-		const img = new Image();
-		img.src = url;
-		console.log(url);
+		const map: L.Map = this._map;
+		if (!map) {
+			return;
+		}
 
-		img.onload = () => {
+		const bounds: L.Bounds = map.getPixelBounds();
+		const zoom: number = map.getZoom();
+
+		const nwTilePoint = new L.Point(
+			// @ts-ignore
+			Math.floor(bounds.min.x / this.tileSize),
+			// @ts-ignore
+			Math.floor(bounds.min.y / this.tileSize)
+		);
+
+		const seTilePoint = new L.Point(
+			// @ts-ignore
+			Math.floor(bounds.max.x / this.tileSize),
+			// @ts-ignore
+			Math.floor(bounds.max.y / this.tileSize)
+		);
+
+		// @ts-ignore
+		const max: number = map.options.crs.scale(zoom) / this.tileSize;
+
+		for (let x = nwTilePoint.x; x <= seTilePoint.x; x++) {
+			for (let y = nwTilePoint.y; y <= seTilePoint.y; y++) {
+				const xTile = (x + max) % max;
+				const yTile = (y + max) % max;
+				console.log('tile ' + xTile + ' ' + yTile);
+			}
+		}
+
+		const tileImage = new Image();
+		tileImage.src = url;
+
+		tileImage.onload = () => {
 			this.removeTileElement(tile);
-
 			this.ctx
-				? this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+				? this.ctx.drawImage(
+						tileImage,
+						0,
+						0,
+						this.canvas.width,
+						this.canvas.height
+				  )
 				: console.log('!ctx');
 		};
 	}
