@@ -1,4 +1,4 @@
-import L from "leaflet";
+import L from 'leaflet';
 
 class CanvasTileLayer extends L.TileLayer {
 	tileSize: L.Point;
@@ -8,8 +8,8 @@ class CanvasTileLayer extends L.TileLayer {
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
 		this.tileSize = this.getTileSize();
-		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
-		this.ctx = this.canvas.getContext("2d");
+		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
+		this.ctx = this.canvas.getContext('2d');
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
 	}
@@ -24,8 +24,18 @@ class CanvasTileLayer extends L.TileLayer {
 
 	private handleTileLoad(tile: HTMLElement, url: string, coords: L.Coords) {
 		const map: L.Map = this._map;
-		const bounds: L.Bounds = map.getPixelBounds();
-		const zoom: number = map.getZoom();
+		const bounds = map.getPixelBounds();
+
+		map.on('moveend', () => {
+			const newBounds = map.getPixelBounds();
+
+			// @ts-ignore
+			const deltaX = Math.floor(newBounds.min.x - bounds.min.x);
+			// @ts-ignore
+			const deltaY = Math.floor(newBounds.min.y - bounds.min.y);
+
+			console.log(deltaX, deltaY);
+		});
 
 		tile.onload = () => {
 			// удаляем оригинальный тайл, который был создан с помощью createTile
@@ -33,20 +43,15 @@ class CanvasTileLayer extends L.TileLayer {
 			// @ts-ignore
 			const pos = this._getTilePos(coords);
 
-			if (this.ctx) {
-				this.ctx.drawImage(
-					// @ts-ignore
-					tile,
-					pos.x,
-					pos.y,
-					// Надо узнать разницу координат мувенда и потом вычитать её из pos
-					this.tileSize.x,
-					this.tileSize.y,
-				);
-				console.log(pos, this._map.getPixelBounds().min.x);
-			} else {
-				console.log("!ctx");
-			}
+			this.ctx?.drawImage(
+				// @ts-ignore
+				tile,
+				pos.x,
+				pos.y,
+				// Надо узнать разницу координат мувенда и потом вычитать её из pos
+				this.tileSize.x,
+				this.tileSize.y
+			);
 		};
 
 		tile.onerror = () => {
