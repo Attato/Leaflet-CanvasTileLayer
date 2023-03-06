@@ -35,24 +35,23 @@ class CanvasTileLayer extends L.TileLayer {
 			const deltaY = Math.floor(newBounds.min.y - bounds.min.y);
 
 			console.log(deltaX, deltaY);
-		});
-
-		tile.onload = () => {
-			// удаляем оригинальный тайл, который был создан с помощью createTile
-			this.removeTileElement(tile);
-			// @ts-ignore
-			const pos = this._getTilePos(coords);
-
-			this.ctx?.drawImage(
+			tile.onload = () => {
+				// удаляем оригинальный тайл, который был создан с помощью createTile
+				this.removeTileElement(tile);
 				// @ts-ignore
-				tile,
-				pos.x,
-				pos.y,
-				// Надо узнать разницу координат мувенда и потом вычитать её из pos
-				this.tileSize.x,
-				this.tileSize.y
-			);
-		};
+				const pos = this._getTilePos(coords);
+
+				this.ctx?.drawImage(
+					// @ts-ignore
+					tile,
+					pos.x - deltaX,
+					pos.y - deltaY,
+					// Надо узнать разницу координат мувенда и потом вычитать её из pos
+					this.tileSize.x,
+					this.tileSize.y
+				);
+			};
+		});
 
 		tile.onerror = () => {
 			console.log(`Failed to load tile: ${url}`);
