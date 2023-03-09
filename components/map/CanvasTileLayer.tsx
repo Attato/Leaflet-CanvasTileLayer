@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import L from "leaflet";
 
 class CanvasTileLayer extends L.TileLayer {
 	tileSize: L.Point;
@@ -8,15 +8,16 @@ class CanvasTileLayer extends L.TileLayer {
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
 		this.tileSize = this.getTileSize();
-		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
-		this.ctx = this.canvas.getContext('2d');
+		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
+		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true }); // Fix Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true.
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
 	}
 
 	createTile(coords: L.Coords, done: L.DoneCallback): HTMLElement {
-		const tile = super.createTile(coords, done);
+		const tile = super.createTile(coords, done) as HTMLImageElement;
+		tile.crossOrigin = "Anonymous";
 		const url = this.getTileUrl(coords);
 
 		this.canvasRedraw(tile, url, coords);
@@ -41,30 +42,53 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x,
 				pos.y,
 				this.tileSize.x,
-				this.tileSize.y
+				this.tileSize.y,
 			);
-
-			const imageData = this.ctx?.getImageData(
-				0,
-				0,
-				this.canvas.width,
-				this.canvas.height
-			);
-
-			console.log(imageData);
 		};
 
-		map.on('moveend', () => {
+		map.on("moveend", () => {
 			const newBounds = map.getPixelBounds();
 
-			// @ts-ignore
-			const deltaX = Math.floor(newBounds.min.x - bounds.min.x);
-			// @ts-ignore
-			const deltaY = Math.floor(newBounds.min.y - bounds.min.y);
+			let deltaX: number = 0;
+			let deltaY: number = 0;
 
-			pos.x -= deltaX;
-			pos.y -= deltaY;
-			L.DomUtil.setPosition(this.canvas, pos.subtract([deltaX, deltaY]));
+			if (newBounds.min && bounds.min) {
+				deltaX = Math.floor(newBounds.min.x - bounds.min.x);
+				deltaY = Math.floor(newBounds.min.y - bounds.min.y);
+			}
+
+			// L.DomUtil.setPosition(this.canvas, pos.subtract([deltaX, deltaY]));
+			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+
+			const imageData = this.ctx?.getImageData(
+				pos.x,
+				pos.y,
+				this.tileSize.x,
+				this.tileSize.y,
+			);
+
+			if (imageData) this.ctx?.putImageData(imageData, deltaX, deltaY);
+
+			let arrTileIndexX = [];
+			let arrTileIndexY = [];
+
+			for (let tileKey in this._tiles) {
+				let tile = this._tiles[tileKey];
+
+				const tileIndexX: number = tile.coords.x / this.tileSize.x;
+				const tileIndexY: number = tile.coords.y / this.tileSize.y;
+				// console.log(tileIndexX);
+				// tileIndexX 299.1875
+
+				arrTileIndexX.push(tileIndexX);
+				console.log(Math.min(...arrTileIndexX));
+
+				// bounds inter
+
+				// нужно найти наименьшие значения x и y, а потом перерисовать угол
+			}
+
+			// нужно пробежаться в цикле _this.tiles и понять какой тайл не закрашен
 		});
 
 		tile.onerror = () => {
