@@ -1,3 +1,5 @@
+"use strict";
+
 import L from "leaflet";
 
 class CanvasTileLayer extends L.TileLayer {
@@ -7,24 +9,26 @@ class CanvasTileLayer extends L.TileLayer {
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
+
 		this.tileSize = this.getTileSize();
 		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
-		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true }); // Fix Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true.
+		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true });
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
 	}
 
-	createTile(coords: L.Coords, done: L.DoneCallback): HTMLElement {
+	createTile(coords: L.Coords, done: L.DoneCallback): HTMLImageElement {
 		const tile = super.createTile(coords, done) as HTMLImageElement;
 		tile.crossOrigin = "Anonymous";
 		const url = this.getTileUrl(coords);
 
 		this.canvasRedraw(tile, url, coords);
+
 		return tile;
 	}
 
-	private canvasRedraw(tile: HTMLElement, url: string, coords: L.Coords) {
+	private canvasRedraw(tile: HTMLImageElement, url: string, coords: L.Coords) {
 		const map: L.Map = this._map;
 		const bounds = map.getPixelBounds();
 
@@ -38,7 +42,6 @@ class CanvasTileLayer extends L.TileLayer {
 			this.ctx?.drawImage(
 				// @ts-ignore
 				tile,
-				// Need to find out the difference in coordinates after onmoveend and then subtract it from pos
 				pos.x,
 				pos.y,
 				this.tileSize.x,
@@ -58,7 +61,7 @@ class CanvasTileLayer extends L.TileLayer {
 			}
 
 			// L.DomUtil.setPosition(this.canvas, pos.subtract([deltaX, deltaY]));
-			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+			// L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
 
 			const imageData = this.ctx?.getImageData(
 				pos.x,
@@ -69,26 +72,22 @@ class CanvasTileLayer extends L.TileLayer {
 
 			if (imageData) this.ctx?.putImageData(imageData, deltaX, deltaY);
 
-			let arrTileIndexX = [];
-			let arrTileIndexY = [];
+			const tileIndexX = Object.values(this._tiles).map(
+				(tile) => tile.coords.x / this.tileSize.x,
+			);
 
-			for (let tileKey in this._tiles) {
-				let tile = this._tiles[tileKey];
+			const tileIndexY = Object.values(this._tiles).map(
+				(tile) => tile.coords.y / this.tileSize.y,
+			);
 
-				const tileIndexX: number = tile.coords.x / this.tileSize.x;
-				const tileIndexY: number = tile.coords.y / this.tileSize.y;
-				// console.log(tileIndexX);
-				// tileIndexX 299.1875
+			const minTileIndexX = Math.min(...tileIndexX);
+			const minTileIndexY = Math.min(...tileIndexY);
 
-				arrTileIndexX.push(tileIndexX);
-				console.log(Math.min(...arrTileIndexX));
+			console.log(
+				`Минимальный индекс по оси X: ${minTileIndexX}, Минимальный индекс по оси Y: ${minTileIndexY}`,
+			);
 
-				// bounds inter
-
-				// нужно найти наименьшие значения x и y, а потом перерисовать угол
-			}
-
-			// нужно пробежаться в цикле _this.tiles и понять какой тайл не закрашен
+			// TODO: redraw the corner of the canvas that needs to be updated based on the new tiles
 		});
 
 		tile.onerror = () => {
