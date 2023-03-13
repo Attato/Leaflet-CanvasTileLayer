@@ -3,9 +3,9 @@
 import L from "leaflet";
 
 class CanvasTileLayer extends L.TileLayer {
-	tileSize: L.Point;
-	canvas: HTMLCanvasElement;
-	ctx: CanvasRenderingContext2D | null;
+	readonly tileSize: L.Point;
+	readonly canvas: HTMLCanvasElement;
+	readonly ctx: CanvasRenderingContext2D | null;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -29,9 +29,6 @@ class CanvasTileLayer extends L.TileLayer {
 	}
 
 	private canvasRedraw(tile: HTMLImageElement, url: string, coords: L.Coords) {
-		const map: L.Map = this._map;
-		const bounds = map.getPixelBounds();
-
 		// @ts-ignore
 		const pos = this._getTilePos(coords);
 
@@ -49,47 +46,6 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 		};
 
-		map.on("moveend", () => {
-			const newBounds = map.getPixelBounds();
-
-			let deltaX: number = 0;
-			let deltaY: number = 0;
-
-			if (newBounds.min && bounds.min) {
-				deltaX = Math.floor(newBounds.min.x - bounds.min.x);
-				deltaY = Math.floor(newBounds.min.y - bounds.min.y);
-			}
-
-			// L.DomUtil.setPosition(this.canvas, pos.subtract([deltaX, deltaY]));
-			// L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
-
-			const imageData = this.ctx?.getImageData(
-				pos.x,
-				pos.y,
-				this.tileSize.x,
-				this.tileSize.y,
-			);
-
-			if (imageData) this.ctx?.putImageData(imageData, deltaX, deltaY);
-
-			const tileIndexX = Object.values(this._tiles).map(
-				(tile) => tile.coords.x / this.tileSize.x,
-			);
-
-			const tileIndexY = Object.values(this._tiles).map(
-				(tile) => tile.coords.y / this.tileSize.y,
-			);
-
-			const minTileIndexX = Math.min(...tileIndexX);
-			const minTileIndexY = Math.min(...tileIndexY);
-
-			console.log(
-				`Минимальный индекс по оси X: ${minTileIndexX}, Минимальный индекс по оси Y: ${minTileIndexY}`,
-			);
-
-			// TODO: redraw the corner of the canvas that needs to be updated based on the new tiles
-		});
-
 		tile.onerror = () => {
 			console.log(`Failed to load tile: ${url}`);
 		};
@@ -103,6 +59,52 @@ class CanvasTileLayer extends L.TileLayer {
 		super.onAdd(map);
 
 		this.getPane()?.appendChild(this.canvas);
+
+		const bounds = map.getPixelBounds();
+
+		map.on("moveend", () => {
+			const newBounds = map.getPixelBounds();
+
+			let deltaX: number = 0;
+			let deltaY: number = 0;
+
+			if (newBounds.min && bounds.min) {
+				deltaX = Math.floor(newBounds.min.x - bounds.min.x);
+				deltaY = Math.floor(newBounds.min.y - bounds.min.y);
+			}
+
+			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+
+			const imageData = this.ctx?.getImageData(
+				0,
+				0,
+				this.canvas.width,
+				this.canvas.height,
+			);
+
+			if (imageData) this.ctx?.putImageData(imageData, -deltaX, -deltaY);
+
+			console.log(deltaX, -deltaY);
+
+			const tileIndexX = Object.values(this._tiles).map(
+				// (tile) => tile.coords.x / this.tileSize.x,
+				(tile) => tile.coords.x,
+			);
+
+			const tileIndexY = Object.values(this._tiles).map(
+				// (tile) => tile.coords.y / this.tileSize.y,
+				(tile) => tile.coords.y,
+			);
+
+			const minTileIndexX = Math.min(...tileIndexX);
+			const maxTileIndexX = Math.max(...tileIndexX);
+			const minTileIndexY = Math.min(...tileIndexY);
+			const maxTileIndexY = Math.max(...tileIndexY);
+
+			console.log(
+				`Минимальный индекс: x: ${minTileIndexX} y: ${minTileIndexY}`,
+			);
+		});
 
 		return this;
 	}
