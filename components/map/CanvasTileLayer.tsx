@@ -84,7 +84,17 @@ class CanvasTileLayer extends L.TileLayer {
 
 			if (imageData) this.ctx?.putImageData(imageData, -deltaX, -deltaY);
 
-			console.log(deltaX, -deltaY);
+			for (const tile of Object.values(this._tiles)) {
+				// @ts-ignore
+				const pos = this._getTilePos(tile.coords);
+				this.ctx?.drawImage(
+					tile.el as HTMLImageElement,
+					pos.x - deltaX,
+					pos.y - deltaY,
+					this.tileSize.x,
+					this.tileSize.y,
+				);
+			}
 
 			const tileIndexX = Object.values(this._tiles).map(
 				// (tile) => tile.coords.x / this.tileSize.x,
@@ -97,9 +107,7 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 
 			const minTileIndexX = Math.min(...tileIndexX);
-			const maxTileIndexX = Math.max(...tileIndexX);
 			const minTileIndexY = Math.min(...tileIndexY);
-			const maxTileIndexY = Math.max(...tileIndexY);
 
 			console.log(
 				`Минимальный индекс: x: ${minTileIndexX} y: ${minTileIndexY}`,
