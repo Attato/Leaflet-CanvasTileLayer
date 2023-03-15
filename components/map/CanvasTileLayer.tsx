@@ -1,18 +1,19 @@
-"use strict";
+'use strict';
 
-import L from "leaflet";
+import L from 'leaflet';
 
 class CanvasTileLayer extends L.TileLayer {
 	readonly tileSize: L.Point;
 	readonly canvas: HTMLCanvasElement;
 	readonly ctx: CanvasRenderingContext2D | null;
+	geoPositionBeforeZoom: L.LatLng | undefined;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
 
 		this.tileSize = this.getTileSize();
-		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
-		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
+		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -20,7 +21,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 	createTile(coords: L.Coords, done: L.DoneCallback): HTMLImageElement {
 		const tile = super.createTile(coords, done) as HTMLImageElement;
-		tile.crossOrigin = "Anonymous";
+		tile.crossOrigin = 'Anonymous';
 		const url = this.getTileUrl(coords);
 
 		this.canvasRedraw(tile, url, coords);
@@ -42,7 +43,7 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x,
 				pos.y,
 				this.tileSize.x,
-				this.tileSize.y,
+				this.tileSize.y
 			);
 		};
 
@@ -62,7 +63,58 @@ class CanvasTileLayer extends L.TileLayer {
 
 		const bounds = map.getPixelBounds();
 
-		map.on("moveend", () => {
+		map.on('zoomstart', () => {
+			const currentBounds = map.getPixelBounds();
+
+			if (currentBounds.min) {
+				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
+					currentBounds.min
+				);
+			}
+
+			return this;
+		});
+
+		const scale = map.options.crs?.scale(map.getZoom());
+
+		console.log(scale);
+
+		map.on('zoomend', () => {
+			const currentBounds = map.getPixelBounds();
+			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
+				this.geoPositionBeforeZoom!
+			);
+
+			console.log(map.unproject(layerPositionBeforeZoom, map.getZoom()));
+
+			let deltaX: number = 0;
+			let deltaY: number = 0;
+
+			if (currentBounds.min) {
+				deltaX = Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x);
+				deltaY = Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y);
+
+				console.log(`deltaX: ${deltaX}, deltaY: ${deltaY}`);
+			}
+
+			const newScale = map.options.crs?.scale(map.getZoom());
+			const deltaScale = newScale! / scale!;
+			console.log(deltaScale);
+
+			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+
+			const imageData = this.ctx?.getImageData(
+				0,
+				0,
+				this.canvas.width,
+				this.canvas.height
+			);
+
+			this.ctx?.putImageData(imageData!, -deltaX!, -deltaY);
+			// надо понять, как использовать crs scale, и потом добавить два значения в putimagedata
+		});
+
+		map.on('moveend', () => {
 			const newBounds = map.getPixelBounds();
 
 			let deltaX: number = 0;
@@ -79,31 +131,22 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height,
+				this.canvas.height
 			);
 
-			if (imageData) this.ctx?.putImageData(imageData, -deltaX, -deltaY);
+			this.ctx?.putImageData(imageData!, -deltaX, -deltaY);
 
-			console.log(deltaX, -deltaY);
-
-			const tileIndexX = Object.values(this._tiles).map(
-				// (tile) => tile.coords.x / this.tileSize.x,
-				(tile) => tile.coords.x,
-			);
-
-			const tileIndexY = Object.values(this._tiles).map(
-				// (tile) => tile.coords.y / this.tileSize.y,
-				(tile) => tile.coords.y,
-			);
-
-			const minTileIndexX = Math.min(...tileIndexX);
-			const maxTileIndexX = Math.max(...tileIndexX);
-			const minTileIndexY = Math.min(...tileIndexY);
-			const maxTileIndexY = Math.max(...tileIndexY);
-
-			console.log(
-				`Минимальный индекс: x: ${minTileIndexX} y: ${minTileIndexY}`,
-			);
+			for (const tile of Object.values(this._tiles)) {
+				// @ts-ignore
+				const pos = this._getTilePos(tile.coords);
+				this.ctx?.drawImage(
+					tile.el as HTMLImageElement,
+					pos.x - deltaX,
+					pos.y - deltaY,
+					this.tileSize.x,
+					this.tileSize.y
+				);
+			}
 		});
 
 		return this;
