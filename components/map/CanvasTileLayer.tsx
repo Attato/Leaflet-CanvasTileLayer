@@ -6,6 +6,7 @@ class CanvasTileLayer extends L.TileLayer {
 	readonly tileSize: L.Point;
 	readonly canvas: HTMLCanvasElement;
 	readonly ctx: CanvasRenderingContext2D | null;
+	geoPositionBeforeZoom: L.LatLng | undefined;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -62,6 +63,57 @@ class CanvasTileLayer extends L.TileLayer {
 
 		const bounds = map.getPixelBounds();
 
+		map.on("zoomstart", () => {
+			const currentBounds = map.getPixelBounds();
+
+			if (currentBounds.min) {
+				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
+					currentBounds.min,
+				);
+			}
+
+			return this;
+		});
+
+		const scale = map.options.crs?.scale(map.getZoom());
+
+		console.log(scale);
+
+		map.on("zoomend", () => {
+			const currentBounds = map.getPixelBounds();
+			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
+				this.geoPositionBeforeZoom!,
+			);
+
+			console.log(map.unproject(layerPositionBeforeZoom, map.getZoom()));
+
+			let deltaX: number = 0;
+			let deltaY: number = 0;
+
+			if (currentBounds.min) {
+				deltaX = Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x);
+				deltaY = Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y);
+
+				console.log(`deltaX: ${deltaX}, deltaY: ${deltaY}`);
+			}
+
+			const newScale = map.options.crs?.scale(map.getZoom());
+			const deltaScale = newScale! / scale!;
+			console.log(deltaScale);
+
+			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+
+			const imageData = this.ctx?.getImageData(
+				0,
+				0,
+				this.canvas.width,
+				this.canvas.height,
+			);
+
+			this.ctx?.putImageData(imageData!, -deltaX!, -deltaY);
+			// надо понять, как использовать crs scale, и потом добавить два значения в putimagedata
+		});
+
 		map.on("moveend", () => {
 			const newBounds = map.getPixelBounds();
 
@@ -82,7 +134,7 @@ class CanvasTileLayer extends L.TileLayer {
 				this.canvas.height,
 			);
 
-			if (imageData) this.ctx?.putImageData(imageData, -deltaX, -deltaY);
+			this.ctx?.putImageData(imageData!, -deltaX, -deltaY);
 
 			for (const tile of Object.values(this._tiles)) {
 				// @ts-ignore
@@ -95,23 +147,6 @@ class CanvasTileLayer extends L.TileLayer {
 					this.tileSize.y,
 				);
 			}
-
-			const tileIndexX = Object.values(this._tiles).map(
-				// (tile) => tile.coords.x / this.tileSize.x,
-				(tile) => tile.coords.x,
-			);
-
-			const tileIndexY = Object.values(this._tiles).map(
-				// (tile) => tile.coords.y / this.tileSize.y,
-				(tile) => tile.coords.y,
-			);
-
-			const minTileIndexX = Math.min(...tileIndexX);
-			const minTileIndexY = Math.min(...tileIndexY);
-
-			console.log(
-				`Минимальный индекс: x: ${minTileIndexX} y: ${minTileIndexY}`,
-			);
 		});
 
 		return this;
