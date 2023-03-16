@@ -7,6 +7,7 @@ class CanvasTileLayer extends L.TileLayer {
 	readonly canvas: HTMLCanvasElement;
 	readonly ctx: CanvasRenderingContext2D | null;
 	geoPositionBeforeZoom: L.LatLng | undefined;
+	imageData: ImageData | undefined;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -37,14 +38,7 @@ class CanvasTileLayer extends L.TileLayer {
 			// delete the original tile that was created with createTile
 			this.removeTileElement(tile);
 
-			this.ctx?.drawImage(
-				// @ts-ignore
-				tile,
-				pos.x,
-				pos.y,
-				this.tileSize.x,
-				this.tileSize.y
-			);
+			this.ctx?.drawImage(tile, pos.x, pos.y, this.tileSize.x, this.tileSize.y);
 		};
 
 		tile.onerror = () => {
@@ -61,90 +55,89 @@ class CanvasTileLayer extends L.TileLayer {
 
 		this.getPane()?.appendChild(this.canvas);
 
-		const bounds = map.getPixelBounds();
-
 		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
 
 			if (currentBounds.min) {
 				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
-					currentBounds.min
+					currentBounds.min,
 				);
 			}
 
-			return this;
+			const imageData = this.ctx?.getImageData(
+				0,
+				0,
+				this.canvas.width,
+				this.canvas.height,
+			);
+
+			this.imageData = imageData;
 		});
 
 		const scale = map.options.crs?.scale(map.getZoom());
 
-		console.log(scale);
-
 		map.on('zoomend', () => {
 			const currentBounds = map.getPixelBounds();
 			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
-				this.geoPositionBeforeZoom!
+				this.geoPositionBeforeZoom!,
 			);
 
-			console.log(map.unproject(layerPositionBeforeZoom, map.getZoom()));
-
-			let deltaX: number = 0;
-			let deltaY: number = 0;
-
-			if (currentBounds.min) {
-				deltaX = Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x);
-				deltaY = Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y);
-
-				console.log(`deltaX: ${deltaX}, deltaY: ${deltaY}`);
-			}
+			const zoomDeltaX = currentBounds.min
+				? Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x)
+				: 0;
+			const zoomDeltaY = currentBounds.min
+				? Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y)
+				: 0;
 
 			const newScale = map.options.crs?.scale(map.getZoom());
+
 			const deltaScale = newScale! / scale!;
-			console.log(deltaScale);
 
-			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
-
-			const imageData = this.ctx?.getImageData(
+			this.ctx?.putImageData(
+				this.imageData!,
+				-zoomDeltaX,
+				-zoomDeltaY,
 				0,
 				0,
-				this.canvas.width,
-				this.canvas.height
+				this.canvas.width * deltaScale,
+				this.canvas.height * deltaScale,
 			);
-
-			this.ctx?.putImageData(imageData!, -deltaX!, -deltaY);
-			// надо понять, как использовать crs scale, и потом добавить два значения в putimagedata
 		});
+
+		const bounds = map.getPixelBounds();
+		// нужно убрать из замыкания или использовать containerPointToLatLng
 
 		map.on('moveend', () => {
 			const newBounds = map.getPixelBounds();
 
-			let deltaX: number = 0;
-			let deltaY: number = 0;
+			let posDeltaX: number = 0;
+			let posDeltaY: number = 0;
 
 			if (newBounds.min && bounds.min) {
-				deltaX = Math.floor(newBounds.min.x - bounds.min.x);
-				deltaY = Math.floor(newBounds.min.y - bounds.min.y);
+				posDeltaX = Math.floor(newBounds.min.x - bounds.min.x);
+				posDeltaY = Math.floor(newBounds.min.y - bounds.min.y);
 			}
 
-			L.DomUtil.setPosition(this.canvas, new L.Point(deltaX, deltaY));
+			L.DomUtil.setPosition(this.canvas, new L.Point(posDeltaX, posDeltaY));
 
 			const imageData = this.ctx?.getImageData(
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height
+				this.canvas.height,
 			);
-
-			this.ctx?.putImageData(imageData!, -deltaX, -deltaY);
+			// container to lanlng
+			this.ctx?.putImageData(imageData!, -posDeltaX, -posDeltaY);
 
 			for (const tile of Object.values(this._tiles)) {
 				// @ts-ignore
 				const pos = this._getTilePos(tile.coords);
 				this.ctx?.drawImage(
 					tile.el as HTMLImageElement,
-					pos.x - deltaX,
-					pos.y - deltaY,
+					pos.x - posDeltaX,
+					pos.y - posDeltaY,
 					this.tileSize.x,
-					this.tileSize.y
+					this.tileSize.y,
 				);
 			}
 		});
