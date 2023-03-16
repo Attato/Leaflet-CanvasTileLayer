@@ -43,7 +43,7 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x,
 				pos.y,
 				this.tileSize.x,
-				this.tileSize.y,
+				this.tileSize.y
 			);
 		};
 
@@ -68,7 +68,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 			if (currentBounds.min) {
 				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
-					currentBounds.min,
+					currentBounds.min
 				);
 			}
 
@@ -82,7 +82,7 @@ class CanvasTileLayer extends L.TileLayer {
 		map.on('zoomend', () => {
 			const currentBounds = map.getPixelBounds();
 			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
-				this.geoPositionBeforeZoom!,
+				this.geoPositionBeforeZoom!
 			);
 
 			console.log(map.unproject(layerPositionBeforeZoom, map.getZoom()));
@@ -107,7 +107,7 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height,
+				this.canvas.height
 			);
 
 			this.ctx?.putImageData(imageData!, -deltaX!, -deltaY);
@@ -131,7 +131,7 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height,
+				this.canvas.height
 			);
 
 			this.ctx?.putImageData(imageData!, -deltaX, -deltaY);
@@ -144,7 +144,7 @@ class CanvasTileLayer extends L.TileLayer {
 					pos.x - deltaX,
 					pos.y - deltaY,
 					this.tileSize.x,
-					this.tileSize.y,
+					this.tileSize.y
 				);
 			}
 		});
