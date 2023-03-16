@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-import L from "leaflet";
+import L from 'leaflet';
 
 class CanvasTileLayer extends L.TileLayer {
 	readonly tileSize: L.Point;
@@ -12,8 +12,8 @@ class CanvasTileLayer extends L.TileLayer {
 		super(urlTemplate, options);
 
 		this.tileSize = this.getTileSize();
-		this.canvas = L.DomUtil.create("canvas", "leaflet-tile-pane");
-		this.ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
+		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -21,7 +21,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 	createTile(coords: L.Coords, done: L.DoneCallback): HTMLImageElement {
 		const tile = super.createTile(coords, done) as HTMLImageElement;
-		tile.crossOrigin = "Anonymous";
+		tile.crossOrigin = 'Anonymous';
 		const url = this.getTileUrl(coords);
 
 		this.canvasRedraw(tile, url, coords);
@@ -63,7 +63,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 		const bounds = map.getPixelBounds();
 
-		map.on("zoomstart", () => {
+		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
 
 			if (currentBounds.min) {
@@ -79,7 +79,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 		console.log(scale);
 
-		map.on("zoomend", () => {
+		map.on('zoomend', () => {
 			const currentBounds = map.getPixelBounds();
 			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
 				this.geoPositionBeforeZoom!,
@@ -114,7 +114,7 @@ class CanvasTileLayer extends L.TileLayer {
 			// надо понять, как использовать crs scale, и потом добавить два значения в putimagedata
 		});
 
-		map.on("moveend", () => {
+		map.on('moveend', () => {
 			const newBounds = map.getPixelBounds();
 
 			let deltaX: number = 0;
