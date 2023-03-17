@@ -37,8 +37,20 @@ class CanvasTileLayer extends L.TileLayer {
 		tile.onload = () => {
 			// delete the original tile that was created with createTile
 			this.removeTileElement(tile);
+			const posCanvas = L.DomUtil.getPosition(this.canvas);
+			const srcPos = this._map.latLngToLayerPoint(
+				// @ts-ignore
+				this._map.unproject(this._level.origin),
+			);
+			console.log(srcPos);
 
-			this.ctx?.drawImage(tile, pos.x, pos.y, this.tileSize.x, this.tileSize.y);
+			this.ctx?.drawImage(
+				tile,
+				pos.x - posCanvas.x + srcPos.x,
+				pos.y - posCanvas.y + srcPos.y,
+				this.tileSize.x,
+				this.tileSize.y,
+			);
 		};
 
 		tile.onerror = () => {
@@ -78,6 +90,7 @@ class CanvasTileLayer extends L.TileLayer {
 
 		map.on('zoomend', () => {
 			const currentBounds = map.getPixelBounds();
+
 			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
 				this.geoPositionBeforeZoom!,
 			);
@@ -93,32 +106,30 @@ class CanvasTileLayer extends L.TileLayer {
 
 			const deltaScale = newScale! / scale!;
 
-			this.ctx?.putImageData(
-				this.imageData!,
-				-zoomDeltaX,
-				-zoomDeltaY,
-				0,
-				0,
-				this.canvas.width * deltaScale,
-				this.canvas.height * deltaScale,
-			);
+			// this.ctx?.putImageData(
+			// 	this.imageData!,
+			// 	-zoomDeltaX,
+			// 	-zoomDeltaY,
+			// 	0,
+			// 	0,
+			// 	this.canvas.width * deltaScale,
+			// 	this.canvas.height * deltaScale,
+			// );
+
+			//this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			console.log('zoomend');
 		});
 
-		const bounds = map.getPixelBounds();
 		// нужно убрать из замыкания или использовать containerPointToLatLng
 
 		map.on('moveend', () => {
-			const newBounds = map.getPixelBounds();
+			const newPixelBounds = map.getPixelBounds().min;
+			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
+			console.log(containerPointToLatLng);
 
-			let posDeltaX: number = 0;
-			let posDeltaY: number = 0;
+			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
 
-			if (newBounds.min && bounds.min) {
-				posDeltaX = Math.floor(newBounds.min.x - bounds.min.x);
-				posDeltaY = Math.floor(newBounds.min.y - bounds.min.y);
-			}
-
-			L.DomUtil.setPosition(this.canvas, new L.Point(posDeltaX, posDeltaY));
+			const pos = L.DomUtil.getPosition(this.canvas);
 
 			const imageData = this.ctx?.getImageData(
 				0,
@@ -127,19 +138,24 @@ class CanvasTileLayer extends L.TileLayer {
 				this.canvas.height,
 			);
 			// container to lanlng
-			this.ctx?.putImageData(imageData!, -posDeltaX, -posDeltaY);
+			// this.ctx?.putImageData(
+			// 	imageData!,
+			// 	pos.x - containerPointToLatLng.x,
+			// 	pos.y - containerPointToLatLng.y,
+			// );
 
 			for (const tile of Object.values(this._tiles)) {
 				// @ts-ignore
-				const pos = this._getTilePos(tile.coords);
-				this.ctx?.drawImage(
-					tile.el as HTMLImageElement,
-					pos.x - posDeltaX,
-					pos.y - posDeltaY,
-					this.tileSize.x,
-					this.tileSize.y,
-				);
+				// const pos = this._getTilePos(tile.coords);
+				// this.ctx?.drawImage(
+				// 	tile.el as HTMLImageElement,
+				// 	pos.x - containerPointToLatLng.x,
+				// 	pos.y - containerPointToLatLng.y,
+				// 	this.tileSize.x,
+				// 	this.tileSize.y,
+				// );
 			}
+			console.log('moveend');
 		});
 
 		return this;
