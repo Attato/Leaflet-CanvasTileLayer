@@ -10,16 +10,13 @@ const Map = () => {
 	useEffect(() => {
 		const map = L.map('map').setView([60.00927, 30.3772], 17);
 
-		const canvasTileLayer = new CanvasTileLayer(
-			'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-			{
-				attribution: 'Map data &copy; OpenStreetMap contributors',
-				maxZoom: 18,
-				tileSize: 256,
-			},
-		).addTo(map);
+		new CanvasTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: 'Map data &copy; OpenStreetMap contributors',
+			maxZoom: 18,
+			tileSize: 256,
+		}).addTo(map);
 
-		const polyline = L.polyline(
+		L.polyline(
 			[
 				[60.00984225370602, 30.379664897918705],
 				[60.00979935110324, 30.383076667785648],

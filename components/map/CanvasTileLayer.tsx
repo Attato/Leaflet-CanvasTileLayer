@@ -71,6 +71,9 @@ class CanvasTileLayer extends L.TileLayer {
 		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
 
+			this.canvas.style.opacity = '0';
+			this.canvas.style.transition = 'opacity 0.5s ease-in-out';
+
 			if (currentBounds.min) {
 				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
 					currentBounds.min,
@@ -85,47 +88,16 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 
 			this.imageData = imageData;
+			this.canvas.classList.add('leaflet-zoom-anim');
 		});
-
-		const scale = map.options.crs?.scale(map.getZoom());
 
 		map.on('zoomend', () => {
-			const currentBounds = map.getPixelBounds();
-
-			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
-				this.geoPositionBeforeZoom!,
-			);
-
-			const zoomDeltaX = currentBounds.min
-				? Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x)
-				: 0;
-			const zoomDeltaY = currentBounds.min
-				? Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y)
-				: 0;
-
-			const newScale = map.options.crs?.scale(map.getZoom());
-
-			const deltaScale = newScale! / scale!;
-
-			// this.ctx?.putImageData(
-			// 	this.imageData!,
-			// 	-zoomDeltaX,
-			// 	-zoomDeltaY,
-			// 	0,
-			// 	0,
-			// 	this.canvas.width * deltaScale,
-			// 	this.canvas.height * deltaScale,
-			// );
-
-			//this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
-			console.log('zoomend');
+			this.canvas.classList.remove('leaflet-zoom-anim');
+			this.canvas.style.opacity = '1';
 		});
-
-		// нужно убрать из замыкания или использовать containerPointToLatLng
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
-			console.log(containerPointToLatLng);
 
 			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
 
@@ -137,7 +109,7 @@ class CanvasTileLayer extends L.TileLayer {
 				this.canvas.width,
 				this.canvas.height,
 			);
-			// container to lanlng
+
 			this.ctx?.putImageData(
 				imageData!,
 				pos.x - containerPointToLatLng.x,
@@ -155,7 +127,6 @@ class CanvasTileLayer extends L.TileLayer {
 					this.tileSize.y,
 				);
 			}
-			console.log('moveend');
 		});
 
 		return this;

@@ -3,20 +3,15 @@
 	height: 100vh;
 }
 
-.leaflet-control-zoom {
-	user-select: none;
-}
-
 .leaflet-tile-pane {
-    width: 100vw;
-    height: 100vh;
+	// ...
 }
 
 .leaflet-top {
 	top: 50vh !important;
+	user-select: none;
 }
 
-.leaflet-control-attribution,
-.leaflet-left {
-	display: none;
+.leaflet-control-attribution {
+	display: none !important;
 }
