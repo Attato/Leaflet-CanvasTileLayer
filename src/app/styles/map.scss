@@ -3,10 +3,6 @@
 	height: 100vh;
 }
 
-.leaflet-tile-pane {
-	// ...
-}
-
 .leaflet-top {
 	top: 50vh !important;
 	user-select: none;
@@ -14,4 +10,17 @@
 
 .leaflet-control-attribution {
 	display: none !important;
+}
+
+canvas,
+.leaflet-zoom-animate {
+	transition: transform 0.3s ease-in-out;
+}
+
+.leaflet-tile-container {
+	transition: all 0.2s ease-in-out;
+}
+
+.leaflet-container {
+	transition: all 0.2s ease-in-out;
 }

@@ -68,12 +68,10 @@ class CanvasTileLayer extends L.TileLayer {
 
 		this.getPane()?.appendChild(this.canvas);
 
+		// ...
+
 		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
-
-			this.canvas.style.opacity = '0';
-			this.canvas.style.transition = 'opacity 0.5s ease-in-out';
-
 			if (currentBounds.min) {
 				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
 					currentBounds.min,
@@ -88,17 +86,41 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 
 			this.imageData = imageData;
-			this.canvas.classList.add('leaflet-zoom-anim');
 		});
 
+		const scale = map.options.crs?.scale(map.getZoom());
+
 		map.on('zoomend', () => {
-			this.canvas.classList.remove('leaflet-zoom-anim');
-			this.canvas.style.opacity = '1';
+			const currentBounds = map.getPixelBounds();
+
+			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
+				this.geoPositionBeforeZoom!,
+			);
+
+			const zoomDeltaX = currentBounds.min
+				? Math.floor(currentBounds.min.x - layerPositionBeforeZoom.x)
+				: 0;
+			const zoomDeltaY = currentBounds.min
+				? Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y)
+				: 0;
+
+			const newScale = map.options.crs?.scale(map.getZoom());
+
+			const deltaScale = newScale! / scale!;
+
+			this.ctx?.putImageData(
+				this.imageData!,
+				-zoomDeltaX,
+				-zoomDeltaY,
+				0,
+				0,
+				this.canvas.width * deltaScale,
+				this.canvas.height * deltaScale,
+			);
 		});
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
-
 			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
 
 			const pos = L.DomUtil.getPosition(this.canvas);
