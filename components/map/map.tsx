@@ -8,7 +8,7 @@ import CanvasTileLayer from './CanvasTileLayer';
 
 const Map = () => {
 	useEffect(() => {
-		const map = L.map('map').setView([60.00927, 30.3772], 17);
+		const map = L.map('map').setView([59.939096, 30.315871], 16);
 
 		new CanvasTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: 'Map data &copy; OpenStreetMap contributors',
@@ -18,12 +18,21 @@ const Map = () => {
 
 		L.polyline(
 			[
-				[60.00984225370602, 30.379664897918705],
-				[60.00979935110324, 30.383076667785648],
-				[60.0089841910741, 30.38303375244141],
-				[60.00984225370602, 30.379664897918705],
+				[59.9373, 30.312803],
+				[59.938075, 30.313063],
+				[59.938807, 30.311953],
+				[59.940522, 30.316586],
+				[59.939895, 30.317419],
+				[59.940287, 30.318981],
+				[59.939634, 30.318825],
+				[59.939294, 30.317749],
+				[59.938467, 30.31787],
+				[59.938058, 30.317298],
+				[59.937962, 30.316256],
+				[59.93811, 30.314643],
+				[59.9373, 30.312803],
 			],
-			{ color: 'red' },
+			{ color: 'red' }
 		).addTo(map);
 
 		return () => {
@@ -31,7 +40,7 @@ const Map = () => {
 		};
 	}, []);
 
-	return <div id='map'></div>;
+	return <div id="map"></div>;
 };
 
 export default Map;

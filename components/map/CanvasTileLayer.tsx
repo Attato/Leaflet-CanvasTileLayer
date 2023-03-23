@@ -3,9 +3,9 @@
 import L from 'leaflet';
 
 class CanvasTileLayer extends L.TileLayer {
-	readonly tileSize: L.Point;
-	readonly canvas: HTMLCanvasElement;
-	readonly ctx: CanvasRenderingContext2D | null;
+	tileSize: L.Point;
+	canvas: HTMLCanvasElement;
+	ctx: CanvasRenderingContext2D | null;
 	geoPositionBeforeZoom: L.LatLng | undefined;
 	imageData: ImageData | undefined;
 	srcPos: L.Point;
@@ -42,7 +42,7 @@ class CanvasTileLayer extends L.TileLayer {
 			const posCanvas = L.DomUtil.getPosition(this.canvas);
 			this.srcPos = this._map.latLngToLayerPoint(
 				// @ts-ignore
-				this._map.unproject(this._level.origin),
+				this._map.unproject(this._level.origin)
 			);
 
 			this.ctx?.drawImage(
@@ -50,7 +50,7 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x - posCanvas.x + this.srcPos.x,
 				pos.y - posCanvas.y + this.srcPos.y,
 				this.tileSize.x,
-				this.tileSize.y,
+				this.tileSize.y
 			);
 		};
 
@@ -72,9 +72,10 @@ class CanvasTileLayer extends L.TileLayer {
 
 		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
+
 			if (currentBounds.min) {
 				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
-					currentBounds.min,
+					currentBounds.min
 				);
 			}
 
@@ -82,7 +83,7 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height,
+				this.canvas.height
 			);
 
 			this.imageData = imageData;
@@ -94,7 +95,7 @@ class CanvasTileLayer extends L.TileLayer {
 			const currentBounds = map.getPixelBounds();
 
 			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
-				this.geoPositionBeforeZoom!,
+				this.geoPositionBeforeZoom!
 			);
 
 			const zoomDeltaX = currentBounds.min
@@ -115,7 +116,7 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width * deltaScale,
-				this.canvas.height * deltaScale,
+				this.canvas.height * deltaScale
 			);
 		});
 
@@ -129,13 +130,13 @@ class CanvasTileLayer extends L.TileLayer {
 				0,
 				0,
 				this.canvas.width,
-				this.canvas.height,
+				this.canvas.height
 			);
 
 			this.ctx?.putImageData(
 				imageData!,
 				pos.x - containerPointToLatLng.x,
-				pos.y - containerPointToLatLng.y,
+				pos.y - containerPointToLatLng.y
 			);
 
 			for (const tile of Object.values(this._tiles)) {
@@ -146,7 +147,7 @@ class CanvasTileLayer extends L.TileLayer {
 					pos.x - containerPointToLatLng.x + this.srcPos.x,
 					pos.y - containerPointToLatLng.y + this.srcPos.y,
 					this.tileSize.x,
-					this.tileSize.y,
+					this.tileSize.y
 				);
 			}
 		});
