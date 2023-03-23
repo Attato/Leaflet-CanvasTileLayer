@@ -32,7 +32,7 @@ const Map = () => {
 				[59.93811, 30.314643],
 				[59.9373, 30.312803],
 			],
-			{ color: 'red' }
+			{ color: 'red' },
 		).addTo(map);
 
 		return () => {
@@ -40,7 +40,7 @@ const Map = () => {
 		};
 	}, []);
 
-	return <div id="map"></div>;
+	return <div id='map'></div>;
 };
 
 export default Map;
