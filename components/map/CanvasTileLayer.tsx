@@ -127,24 +127,18 @@ class CanvasTileLayer extends L.TileLayer {
 			const offset = map.latLngToLayerPoint(center);
 
 			L.DomUtil.setTransform(this.canvas, offset, scale);
-
-			// Force redraw of tiles after zoom animation
-			setTimeout(() => {
-				for (const tile of Object.values(this._tiles)) {
-					this.canvasRedraw(
-						tile.el as HTMLImageElement,
-						this.getTileUrl(tile.coords),
-						tile.coords,
-					);
-				}
-			}, 250);
 		});
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
+
 			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
 
 			const pos = L.DomUtil.getPosition(this.canvas);
+
+			this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+			this.ctx?.clearRect(0, this.srcPos.y, this.canvas.width, this.srcPos.y);
 
 			const imageData = this.ctx?.getImageData(
 				0,
@@ -158,7 +152,9 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x - containerPointToLatLng.x,
 				pos.y - containerPointToLatLng.y,
 			);
+			console.log(this.srcPos.y - containerPointToLatLng.y);
 
+			// высота image data
 			for (const tile of Object.values(this._tiles)) {
 				// @ts-ignore
 				const pos = this._getTilePos(tile.coords);
