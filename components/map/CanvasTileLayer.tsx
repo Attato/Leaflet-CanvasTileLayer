@@ -152,7 +152,6 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.x - containerPointToLatLng.x,
 				pos.y - containerPointToLatLng.y,
 			);
-			console.log(this.srcPos.y - containerPointToLatLng.y);
 
 			// высота image data
 			for (const tile of Object.values(this._tiles)) {

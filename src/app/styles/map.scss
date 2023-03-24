@@ -15,8 +15,3 @@
 .leaflet-zoom-anim .leaflet-zoom-animated {
 	transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1) !important;
 }
-
-.leaflet-tile,
-.leaflet-tile-loaded {
-	opacity: 1 !important;
-}

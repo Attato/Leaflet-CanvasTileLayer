@@ -8,7 +8,7 @@ import CanvasTileLayer from './CanvasTileLayer';
 
 const Map = () => {
 	useEffect(() => {
-		const map = L.map('map').setView([59.939096, 30.315871], 0);
+		const map = L.map('map').setView([59.939096, 30.315871], 15);
 
 		new CanvasTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: 'Map data &copy; OpenStreetMap contributors',
