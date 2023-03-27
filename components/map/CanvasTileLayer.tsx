@@ -68,8 +68,6 @@ class CanvasTileLayer extends L.TileLayer {
 
 		this.getPane()?.appendChild(this.canvas);
 
-		// ...
-
 		map.on('zoomstart', () => {
 			const currentBounds = map.getPixelBounds();
 
@@ -120,15 +118,6 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 		});
 
-		map.on('zoomanim', (event: L.ZoomAnimEvent) => {
-			const { center, zoom } = event;
-
-			const scale = map.options.crs?.scale(zoom);
-			const offset = map.latLngToLayerPoint(center);
-
-			L.DomUtil.setTransform(this.canvas, offset, scale);
-		});
-
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
 
@@ -153,7 +142,6 @@ class CanvasTileLayer extends L.TileLayer {
 				pos.y - containerPointToLatLng.y,
 			);
 
-			// высота image data
 			for (const tile of Object.values(this._tiles)) {
 				// @ts-ignore
 				const pos = this._getTilePos(tile.coords);
