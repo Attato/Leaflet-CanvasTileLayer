@@ -1,5 +1,3 @@
-'use strict';
-
 import L from 'leaflet';
 
 class CanvasTileLayer extends L.TileLayer {
@@ -118,6 +116,8 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 		});
 
+		// i guess zoomanim should be used here
+
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
 
@@ -126,7 +126,6 @@ class CanvasTileLayer extends L.TileLayer {
 			const pos = L.DomUtil.getPosition(this.canvas);
 
 			this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
 			this.ctx?.clearRect(0, this.srcPos.y, this.canvas.width, this.srcPos.y);
 
 			const imageData = this.ctx?.getImageData(
