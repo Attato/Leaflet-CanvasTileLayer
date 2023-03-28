@@ -12,7 +12,10 @@ class CanvasTileLayer extends L.TileLayer {
 		super(urlTemplate, options);
 
 		this.tileSize = this.getTileSize();
-		this.canvas = L.DomUtil.create('canvas', 'leaflet-tile-pane');
+		this.canvas = L.DomUtil.create(
+			'canvas',
+			'leaflet-tile-pane leaflet-zoom-animated',
+		);
 		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 		this.srcPos = new L.Point(0, 0);
 
@@ -38,6 +41,8 @@ class CanvasTileLayer extends L.TileLayer {
 			// delete the original tile that was created with createTile
 			this.removeTileElement(tile);
 			const posCanvas = L.DomUtil.getPosition(this.canvas);
+			console.log();
+
 			this.srcPos = this._map.latLngToLayerPoint(
 				// @ts-ignore
 				this._map.unproject(this._level.origin),
@@ -102,7 +107,6 @@ class CanvasTileLayer extends L.TileLayer {
 				: 0;
 
 			const newScale = map.options.crs?.scale(map.getZoom());
-
 			const deltaScale = newScale! / scale!;
 
 			this.ctx?.putImageData(
@@ -116,7 +120,42 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 		});
 
-		// i guess zoomanim should be used here
+		// _setView
+		map.on('zoomanim', (event: L.ZoomAnimEvent) => {
+			let tileZoom: number | undefined = Math.round(this._map.getZoom());
+
+			if (
+				(this.options.maxZoom !== undefined &&
+					tileZoom > this.options.maxZoom) ||
+				(this.options.minZoom !== undefined && tileZoom < this.options.minZoom)
+			) {
+				tileZoom = undefined;
+			} else {
+				// @ts-ignore
+				tileZoom = this._clampZoom(tileZoom);
+			}
+
+			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
+			const newScale = map.options.crs?.scale(map.getZoom());
+			const deltaScale = newScale! / scale!;
+
+			const translate = this._map.unproject(
+				this._level.origin
+					.multiplyBy(scale)
+					.subtract(this._map._getNewPixelOrigin(map.getCenter(), deltaScale))
+					.round(),
+			);
+
+			console.log();
+
+			L.DomUtil.setTransform(
+				this.canvas,
+				map.getCenter().latLngToLayerPoint(),
+				deltaScale,
+			);
+		});
+
+		// в зуменд анимацию убирать
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);

@@ -12,6 +12,6 @@
 	display: none !important;
 }
 
-.leaflet-zoom-anim .leaflet-zoom-animated {
-	transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1) !important;
+div .leaflet-zoom-anim .leaflet-zoom-animated {
+	transition: transform 0.3s cubic-bezier(0, 0, 0.25, 1);
 }
