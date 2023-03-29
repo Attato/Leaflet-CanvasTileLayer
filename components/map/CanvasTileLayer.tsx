@@ -7,6 +7,7 @@ class CanvasTileLayer extends L.TileLayer {
 	geoPositionBeforeZoom: L.LatLng | undefined;
 	imageData: ImageData | undefined;
 	srcPos: L.Point;
+	scale: number;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -18,6 +19,7 @@ class CanvasTileLayer extends L.TileLayer {
 		);
 		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 		this.srcPos = new L.Point(0, 0);
+		this.scale = 0;
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -75,9 +77,7 @@ class CanvasTileLayer extends L.TileLayer {
 			const currentBounds = map.getPixelBounds();
 
 			if (currentBounds.min) {
-				this.geoPositionBeforeZoom = this._map.layerPointToLatLng(
-					currentBounds.min,
-				);
+				this.geoPositionBeforeZoom = map.layerPointToLatLng(currentBounds.min);
 			}
 
 			const imageData = this.ctx?.getImageData(
@@ -90,12 +90,10 @@ class CanvasTileLayer extends L.TileLayer {
 			this.imageData = imageData;
 		});
 
-		const scale = map.options.crs?.scale(map.getZoom());
-
 		map.on('zoomend', () => {
 			const currentBounds = map.getPixelBounds();
 
-			const layerPositionBeforeZoom = this._map.latLngToLayerPoint(
+			const layerPositionBeforeZoom = map.latLngToLayerPoint(
 				this.geoPositionBeforeZoom!,
 			);
 
@@ -106,60 +104,44 @@ class CanvasTileLayer extends L.TileLayer {
 				? Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y)
 				: 0;
 
-			const newScale = map.options.crs?.scale(map.getZoom());
-			const deltaScale = newScale! / scale!;
-
 			this.ctx?.putImageData(
 				this.imageData!,
 				-zoomDeltaX,
 				-zoomDeltaY,
 				0,
 				0,
-				this.canvas.width * deltaScale,
-				this.canvas.height * deltaScale,
+				this.canvas.width * this.scale,
+				this.canvas.height * this.scale,
 			);
 		});
 
 		// _setView
 		map.on('zoomanim', (event: L.ZoomAnimEvent) => {
-			let tileZoom: number | undefined = Math.round(this._map.getZoom());
+			const center = map.latLngToLayerPoint(map.getCenter());
+			const zoom = map.getZoom();
+			console.log(event.zoom, zoom);
 
-			if (
-				(this.options.maxZoom !== undefined &&
-					tileZoom > this.options.maxZoom) ||
-				(this.options.minZoom !== undefined && tileZoom < this.options.minZoom)
-			) {
-				tileZoom = undefined;
-			} else {
-				// @ts-ignore
-				tileZoom = this._clampZoom(tileZoom);
-			}
+			// @ts-ignore
+			this.scale = this._map.getZoomScale(zoom, this._level.zoom);
 
-			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
-			const newScale = map.options.crs?.scale(map.getZoom());
-			const deltaScale = newScale! / scale!;
+			const translate = this.srcPos
+				.multiplyBy(this.scale)
+				.subtract(this._map._getNewPixelOrigin(map.getCenter(), zoom))
+				.round();
 
-			const translate = this._map.unproject(
-				this._level.origin
-					.multiplyBy(scale)
-					.subtract(this._map._getNewPixelOrigin(map.getCenter(), deltaScale))
-					.round(),
-			);
+			console.log(translate);
+			console.log(map);
+			// посчитать transform origin event center
+			console.log(event);
 
-			console.log();
-
-			L.DomUtil.setTransform(
-				this.canvas,
-				map.getCenter().latLngToLayerPoint(),
-				deltaScale,
-			);
+			// вычислить дельту центра после зума и текущего и записать в css transform origin
+			L.DomUtil.setTransform(this.canvas, translate, this.scale);
 		});
 
 		// в зуменд анимацию убирать
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
-
 			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
 
 			const pos = L.DomUtil.getPosition(this.canvas);
