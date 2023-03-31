@@ -141,8 +141,10 @@ class CanvasTileLayer extends L.TileLayer {
 
 			console.log(delta);
 
-			// вычислить дельту центра после зума и текущего и записать в css transform origin
-			L.DomUtil.setTransform(this.canvas, delta, scale);
+			this.canvas.style.transform = `translate3d(${delta.x}px, ${
+				delta.y
+			}px, 0)${`scale(${scale})`}`;
+
 			this.canvas.style.transformOrigin = `${delta.x}px ${delta.y}px`;
 		});
 
@@ -180,6 +182,8 @@ class CanvasTileLayer extends L.TileLayer {
 					this.tileSize.y,
 				);
 			}
+
+			this.canvas.style.transformOrigin = `0px 0px`;
 		});
 
 		return this;
