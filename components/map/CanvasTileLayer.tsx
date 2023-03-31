@@ -7,7 +7,6 @@ class CanvasTileLayer extends L.TileLayer {
 	geoPositionBeforeZoom: L.LatLng | undefined;
 	imageData: ImageData | undefined;
 	srcPos: L.Point;
-	scale: number;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -19,7 +18,6 @@ class CanvasTileLayer extends L.TileLayer {
 		);
 		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 		this.srcPos = new L.Point(0, 0);
-		this.scale = 0;
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -43,7 +41,6 @@ class CanvasTileLayer extends L.TileLayer {
 			// delete the original tile that was created with createTile
 			this.removeTileElement(tile);
 			const posCanvas = L.DomUtil.getPosition(this.canvas);
-			console.log();
 
 			this.srcPos = this._map.latLngToLayerPoint(
 				// @ts-ignore
@@ -104,38 +101,49 @@ class CanvasTileLayer extends L.TileLayer {
 				? Math.floor(currentBounds.min.y - layerPositionBeforeZoom.y)
 				: 0;
 
+			const scale = this._map.getZoomScale(
+				this._map.getZoom(),
+				// @ts-ignore
+				this._level.zoom,
+			);
+
 			this.ctx?.putImageData(
 				this.imageData!,
 				-zoomDeltaX,
 				-zoomDeltaY,
 				0,
 				0,
-				this.canvas.width * this.scale,
-				this.canvas.height * this.scale,
+				this.canvas.width * scale,
+				this.canvas.height * scale,
 			);
 		});
 
 		// _setView
 		map.on('zoomanim', (event: L.ZoomAnimEvent) => {
-			const center = map.latLngToLayerPoint(map.getCenter());
-			const zoom = map.getZoom();
-			console.log(event.zoom, zoom);
+			const scale = this._map.getZoomScale(
+				this._map.getZoom(),
+				// @ts-ignore
+				this._level.zoom,
+			);
 
-			// @ts-ignore
-			this.scale = this._map.getZoomScale(zoom, this._level.zoom);
+			const delta = new L.Point(
+				Math.round(
+					// @ts-ignore
+					map._getNewPixelOrigin(event.center, event.zoom).x * scale -
+						map.getPixelOrigin().x,
+				),
+				Math.round(
+					// @ts-ignore
+					map._getNewPixelOrigin(event.center, event.zoom).y * scale -
+						map.getPixelOrigin().y,
+				),
+			);
 
-			const translate = this.srcPos
-				.multiplyBy(this.scale)
-				.subtract(this._map._getNewPixelOrigin(map.getCenter(), zoom))
-				.round();
-
-			console.log(translate);
-			console.log(map);
-			// посчитать transform origin event center
-			console.log(event);
+			console.log(delta);
 
 			// вычислить дельту центра после зума и текущего и записать в css transform origin
-			L.DomUtil.setTransform(this.canvas, translate, this.scale);
+			L.DomUtil.setTransform(this.canvas, delta, scale);
+			this.canvas.style.transformOrigin = `${delta.x}px ${delta.y}px`;
 		});
 
 		// в зуменд анимацию убирать
@@ -143,7 +151,6 @@ class CanvasTileLayer extends L.TileLayer {
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
 			L.DomUtil.setPosition(this.canvas, containerPointToLatLng);
-
 			const pos = L.DomUtil.getPosition(this.canvas);
 
 			this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
