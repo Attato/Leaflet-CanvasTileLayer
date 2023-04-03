@@ -116,6 +116,8 @@ class CanvasTileLayer extends L.TileLayer {
 				this.canvas.width * scale,
 				this.canvas.height * scale,
 			);
+
+			this.canvas.style.transformOrigin = `0px 0px`;
 		});
 
 		// _setView
@@ -126,29 +128,26 @@ class CanvasTileLayer extends L.TileLayer {
 				this._level.zoom,
 			);
 
+			// @ts-ignore
+			const { x, y } = map._getNewPixelOrigin(event.center, event.zoom);
+
 			const delta = new L.Point(
-				Math.round(
-					// @ts-ignore
-					map._getNewPixelOrigin(event.center, event.zoom).x * scale -
-						map.getPixelOrigin().x,
-				),
-				Math.round(
-					// @ts-ignore
-					map._getNewPixelOrigin(event.center, event.zoom).y * scale -
-						map.getPixelOrigin().y,
-				),
+				x * scale - map.getPixelOrigin().x,
+				y * scale - map.getPixelOrigin().y,
 			);
 
 			console.log(delta);
 
-			this.canvas.style.transform = `translate3d(${delta.x}px, ${
-				delta.y
-			}px, 0)${`scale(${scale})`}`;
+			this.canvas.style.transform = `translate3d(${-delta.x}px, ${-delta.y}px, 0)${`scale(${
+				1 / scale
+			})`}`;
 
-			this.canvas.style.transformOrigin = `${delta.x}px ${delta.y}px`;
+			this.canvas.style.transformOrigin = `${
+				(delta.x / this.canvas.width) * 100
+			}% ${(delta.y / this.canvas.height) * 100}%`;
+
+			this.canvas.style.willChange = 'transform';
 		});
-
-		// в зуменд анимацию убирать
 
 		map.on('moveend', () => {
 			const containerPointToLatLng = map.containerPointToLayerPoint([0, 0]);
@@ -182,8 +181,6 @@ class CanvasTileLayer extends L.TileLayer {
 					this.tileSize.y,
 				);
 			}
-
-			this.canvas.style.transformOrigin = `0px 0px`;
 		});
 
 		return this;
