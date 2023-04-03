@@ -7,6 +7,7 @@ class CanvasTileLayer extends L.TileLayer {
 	geoPositionBeforeZoom: L.LatLng | undefined;
 	imageData: ImageData | undefined;
 	srcPos: L.Point;
+	isZooming: boolean;
 
 	constructor(urlTemplate: string, options?: L.TileLayerOptions) {
 		super(urlTemplate, options);
@@ -18,6 +19,8 @@ class CanvasTileLayer extends L.TileLayer {
 		);
 		this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 		this.srcPos = new L.Point(0, 0);
+
+		this.isZooming = false;
 
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -47,13 +50,15 @@ class CanvasTileLayer extends L.TileLayer {
 				this._map.unproject(this._level.origin),
 			);
 
-			this.ctx?.drawImage(
-				tile,
-				pos.x - posCanvas.x + this.srcPos.x,
-				pos.y - posCanvas.y + this.srcPos.y,
-				this.tileSize.x,
-				this.tileSize.y,
-			);
+			if (!this.isZooming) {
+				this.ctx?.drawImage(
+					tile,
+					pos.x - posCanvas.x + this.srcPos.x,
+					pos.y - posCanvas.y + this.srcPos.y,
+					this.tileSize.x,
+					this.tileSize.y,
+				);
+			}
 		};
 
 		tile.onerror = () => {
@@ -85,6 +90,8 @@ class CanvasTileLayer extends L.TileLayer {
 			);
 
 			this.imageData = imageData;
+
+			this.isZooming = true;
 		});
 
 		map.on('zoomend', () => {
@@ -117,7 +124,9 @@ class CanvasTileLayer extends L.TileLayer {
 				this.canvas.height * scale,
 			);
 
-			this.canvas.style.transformOrigin = `0px 0px`;
+			this.canvas.style.transformOrigin = '0% 0%';
+
+			this.isZooming = false;
 		});
 
 		// _setView
@@ -128,6 +137,8 @@ class CanvasTileLayer extends L.TileLayer {
 				this._level.zoom,
 			);
 
+			console.log(event);
+
 			// @ts-ignore
 			const { x, y } = map._getNewPixelOrigin(event.center, event.zoom);
 
@@ -135,12 +146,13 @@ class CanvasTileLayer extends L.TileLayer {
 				x * scale - map.getPixelOrigin().x,
 				y * scale - map.getPixelOrigin().y,
 			);
+			console.log(1 / scale);
 
-			console.log(delta);
-
-			this.canvas.style.transform = `translate3d(${-delta.x}px, ${-delta.y}px, 0)${`scale(${
-				1 / scale
-			})`}`;
+			L.DomUtil.setTransform(
+				this.canvas,
+				new L.Point(-delta.x, -delta.y),
+				1 / scale,
+			);
 
 			this.canvas.style.transformOrigin = `${
 				(delta.x / this.canvas.width) * 100
